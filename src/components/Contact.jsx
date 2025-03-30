@@ -1,30 +1,54 @@
 import '../Contact.css'
-import {useEffect, useState} from "react";
-import {base_url} from "../utils/constants.js";
+import { useEffect, useState } from "react";
+import { base_url } from "../utils/constants.js";
 
 const Contact = () => {
-    const [planets, setPlanets] = useState(['Loading...'])
+    const [planets, setPlanets] = useState(['Loading...']);
+
 
     async function fetchPlanets() {
         const response = await fetch(`${base_url}/v1/planets`);
         const data = await response.json();
         const planets = data.map(item => item.name);
         setPlanets(planets);
+
+
+        const currentTime = new Date().getTime();
+        const planetsDataWithTimestamp = {
+            planets: planets,
+            timestamp: currentTime
+        };
+        localStorage.setItem('planetsData', JSON.stringify(planetsDataWithTimestamp));
     }
 
     useEffect(() => {
+        const storedPlanetsData = localStorage.getItem('planetsData');
+        const currentTime = new Date().getTime();
+
+
+        if (storedPlanetsData) {
+            const parsedData = JSON.parse(storedPlanetsData);
+            if (currentTime - parsedData.timestamp < 30 * 24 * 60 * 60 * 1000) {
+                // Если данные актуальны, используем их
+                setPlanets(parsedData.planets);
+                return;
+            }
+        }
+
+
         fetchPlanets();
+
         return () => console.log('Component Contact was unmounted');
-    }, [])
+    }, []);
 
     return (
         <form className={'containerContact'} onSubmit={e => e.preventDefault()}>
             <label>First Name
-                <input type="text" name="firstname" placeholder="Your name.."/>
+                <input type="text" name="firstname" placeholder="Your name.." />
             </label>
 
             <label>Last Name
-                <input type="text" name="lastname" placeholder="Your last name.."/>
+                <input type="text" name="lastname" placeholder="Your last name.." />
             </label>
 
             <label>Planet
@@ -34,7 +58,7 @@ const Contact = () => {
             </label>
 
             <label>Subject
-                <textarea name="subject" placeholder="Write something.." style={{height: '200px'}}></textarea>
+                <textarea name="subject" placeholder="Write something.." style={{ height: '200px' }}></textarea>
             </label>
             <button type="submit">Submit</button>
         </form>
